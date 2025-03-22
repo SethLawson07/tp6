@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+ fx:controller="lawson.lonchi.crossword.controller.CrosswordController"
+  stylesheets="@../styles/styles.css"
+ >
+    <top>
+        <HBox alignment="CENTER" spacing="10">
+            <Label text="Mots croisés" >
+                <font>
+                    <Font name="Arial" size="24"/>
+                </font>
+            </Label>
+        </HBox>
+    </top>
+    <center>
+        <ScrollPane>
+            <GridPane fx:id="gridPane" alignment="CENTER" hgap="5" vgap="5"/>
+        </ScrollPane>
+    </center>
+    <right>
+        <VBox spacing="10">
+            <Label text="Indices horizontaux" >
+                <font>
+                    <Font name="Arial" size="16"/>
+                </font>
+            </Label>
+            <ListView fx:id="horizontalClues"/>
+            <Label text="Indices verticaux" >
+                <font>
+                    <Font name="Arial" size="16"/>
+                </font>
+            </Label>
+            <ListView fx:id="verticalClues"/>
+        </VBox>
+    </right>
+</BorderPane>

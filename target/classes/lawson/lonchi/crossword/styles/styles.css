@@ -1,0 +1,8 @@
+.current-cell {
+    -fx-border-color: blue;
+    -fx-border-width: 2px;
+}
+
+.selected-clue {
+    -fx-text-fill: red;
+}
