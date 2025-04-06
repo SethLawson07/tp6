@@ -1,5 +1,7 @@
 package lawson.lonchi.crossword;
 
+import java.io.IOException;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -10,6 +12,9 @@ import lawson.lonchi.crossword.controller.MainMenuController;
 import lawson.lonchi.crossword.model.Crossword;
 
 public class App extends Application {
+
+
+    private static Scene scene;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -29,9 +34,18 @@ public class App extends Application {
         CrosswordController controller = loader.getController();
         controller.setCrossword(crossword);
 
-        primaryStage.setScene(new Scene(root, 640, 640));
+        primaryStage.setScene(new Scene(root, 800, 800));
         primaryStage.setTitle("Grille de mots croisés");
         primaryStage.show();
+    }
+
+    static void setRoot(String fxml) throws IOException {
+        scene.setRoot(loadFXML(fxml));
+    }
+
+    private static Parent loadFXML(String fxml) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
+        return fxmlLoader.load();
     }
 
     public static void main(String[] args) {

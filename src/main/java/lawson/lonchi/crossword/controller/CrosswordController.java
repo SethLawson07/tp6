@@ -56,6 +56,7 @@ public class CrosswordController {
         for (int i = 0; i < crossword.getHeight(); i++) {
             for (int j = 0; j < crossword.getWidth(); j++) {
                 Label label = new Label();
+                label.setFocusTraversable(true); // Ajoutez cette ligne
                 label.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
                 label.setPrefSize(30, 30);
                 label.setStyle("-fx-border-color: black; -fx-alignment: center;");
@@ -107,8 +108,7 @@ public class CrosswordController {
         gridPane.requestFocus();
     }
 
-    
-    
+ 
     /**
     * Initialise les indices horizontaux et verticaux.
     */
@@ -148,12 +148,24 @@ public class CrosswordController {
     * @param row   La ligne de la case cliquée.
     * @param column La colonne de la case cliquée.
     */
+    // public void handleMouseClick(MouseEvent event, int row, int column) {
+    //     if (!crossword.isBlackSquare(row, column)) {
+    //         currentRow = row;
+    //         currentColumn = column;
+    //         updateCurrentCell();
+    //         updateClueSelection();
+    //     }
+    // }
     public void handleMouseClick(MouseEvent event, int row, int column) {
         if (!crossword.isBlackSquare(row, column)) {
             currentRow = row;
             currentColumn = column;
             updateCurrentCell();
             updateClueSelection();
+            
+            // Donner explicitement le focus à la case cliquée
+            Label label = (Label) gridPane.getChildren().get(row * crossword.getWidth() + column);
+            label.requestFocus();
         }
     }
     
@@ -163,25 +175,32 @@ public class CrosswordController {
     * @param event L'événement clavier.
     */
     @FXML
+  
     private void handleKeyPress(KeyEvent event) {
         if (event.getCode().isLetterKey()) {
-            // Saisie d'une lettre : convertir en minuscule
-            char letter = event.getText().toLowerCase().charAt(0); // Convertir en minuscule
-            crossword.setProposition(currentRow, currentColumn, letter); // Stocker en minuscule
+            char letter = event.getText().toLowerCase().charAt(0);
+            crossword.setProposition(currentRow, currentColumn, letter);
+            
+            // Réinitialiser l'état correct si on modifie la case
+            if (correctCells != null) {
+                correctCells[currentRow][currentColumn] = false;
+            }
+            
             moveToNextCell();
             animateLabel((Label) gridPane.getChildren().get(currentRow * crossword.getWidth() + currentColumn));
-        } else if (event.getCode() == KeyCode.BACK_SPACE) {
-            // Effacer une lettre
-            crossword.setProposition(currentRow, currentColumn, ' ');
-            moveToPreviousCell();
-        } else if (event.getCode() == KeyCode.ENTER) {
-            // Vérifier les réponses
-            checkAnswers();
-        } else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.RIGHT ||
-        event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
-            // Navigation avec les flèches
-            handleArrowKey(event.getCode());
-        }
+        } 
+    else if (event.getCode() == KeyCode.BACK_SPACE) {
+        //         // Effacer une lettre
+                crossword.setProposition(currentRow, currentColumn, ' ');
+                moveToPreviousCell();
+            } else if (event.getCode() == KeyCode.ENTER) {
+                // Vérifier les réponses
+                checkAnswers();
+            } else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.RIGHT ||
+            event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
+                // Navigation avec les flèches
+                handleArrowKey(event.getCode());
+            }
     }
     /**
     * Déplace la case courante vers la cellule suivante.
@@ -228,18 +247,14 @@ public class CrosswordController {
         for (int i = 0; i < crossword.getHeight(); i++) {
             for (int j = 0; j < crossword.getWidth(); j++) {
                 Label label = (Label) gridPane.getChildren().get(i * crossword.getWidth() + j);
+                updateCellStyle(i, j);
+                
                 if (i == currentRow && j == currentColumn) {
-                    // Case courante
-                    label.setStyle("-fx-border-color: blue; -fx-alignment: center;");
                     label.requestFocus(); // Donner le focus à la case courante
-                } else if (!crossword.isBlackSquare(i, j)) {
-                    // Case blanche
-                    label.setStyle("-fx-border-color: black; -fx-alignment: center;");
                 }
             }
         }
     }
-    
     /**
     * Anime le label lors de la saisie d'une lettre.
     *
@@ -259,40 +274,47 @@ public class CrosswordController {
     /**
     * Vérifie les réponses et met en surbrillance les cases correctes.
     */
+ 
     private void checkAnswers() {
-        boolean allCorrect = true; // Flag pour vérifier si toutes les cases sont correctes
+        // Créer un tableau pour marquer les cases correctes
+        correctCells = new boolean[crossword.getHeight()][crossword.getWidth()];
         
         for (int i = 0; i < crossword.getHeight(); i++) {
             for (int j = 0; j < crossword.getWidth(); j++) {
-                Label label = (Label) gridPane.getChildren().get(i * crossword.getWidth() + j);
-                
-                char proposition = crossword.getProposition(i, j); // Proposition de l'utilisateur
-                char solution = crossword.getSolution(i, j);
-                
-                // Vérifier si la case est noire ou vide
-                if (crossword.isBlackSquare(i, j) || solution == ' ') {
-                    // Case noire ou vide : ne pas vérifier la réponse
-                    label.setStyle("-fx-background-color: black; -fx-border-color: black;");
-                } else {
-                    // Case blanche : vérifier la réponse
-                    if (proposition == solution) {
-                        // Case correcte : colorer en vert
-                        label.setStyle("-fx-background-color: green; -fx-border-color: black; -fx-alignment: center;");
-                    } else {
-                        // Case incorrecte : colorer en rouge (ou une autre couleur)
-                        label.setStyle("-fx-background-color: white; -fx-border-color: black; -fx-alignment: center;");
-                        allCorrect = false; // Au moins une case est incorrecte
-                    }
+                if (!crossword.isBlackSquare(i, j)) {
+                    char proposition = crossword.getProposition(i, j);
+                    char solution = crossword.getSolution(i, j);
+                    
+                    // Marquer comme correct si la proposition correspond à la solution
+                    correctCells[i][j] = (proposition == solution && proposition != ' ');
+                    
+                    // Mettre à jour le style
+                    updateCellStyle(i, j);
                 }
             }
         }
+    }
+
+    private void updateCellStyle(int row, int column) {
+        Label label = (Label) gridPane.getChildren().get(row * crossword.getWidth() + column);
         
-        // Afficher un message de succès ou d'échec dans la console
-        if (allCorrect) {
-            System.out.println("Félicitations ! Toutes les réponses sont correctes.");
-        } else {
-            System.out.println("Il y a des erreurs. Vérifie tes réponses.");
+        if (crossword.isBlackSquare(row, column)) {
+            label.setStyle("-fx-background-color: black; -fx-border-color: black;");
+            return;
         }
+        
+        // Déterminer le style en fonction de l'état
+        String style = "-fx-border-color: ";
+        style += (row == currentRow && column == currentColumn) ? "blue" : "black";
+        style += "; -fx-alignment: center; -fx-background-color: ";
+        
+        if (correctCells != null && correctCells[row][column]) {
+            style += "green;";
+        } else {
+            style += "white;";
+        }
+        
+        label.setStyle(style);
     }
     
     /**
@@ -391,27 +413,5 @@ public class CrosswordController {
         }
     }
     
-    private void updateCellStyle(int row, int column) {
-        Label label = (Label) gridPane.getChildren().get(row * crossword.getWidth() + column);
-        char solution = crossword.getSolution(row, column);
-        char proposition = crossword.getProposition(row, column);
-        
-        // Vérifier si la case est noire ou vide
-        if (crossword.isBlackSquare(row, column) || solution == ' ') {
-            // Case noire ou vide : fond noir
-            label.setStyle("-fx-background-color: black; -fx-border-color: black;");
-        } else {
-            // Case blanche : vérifier si elle est correcte
-            if (proposition == solution) {
-                // Case correcte : fond vert
-                label.setStyle("-fx-background-color: green; -fx-border-color: black; -fx-alignment: center;");
-            } else if (proposition != ' ') {
-                // Case incorrecte : fond rouge
-                label.setStyle("-fx-background-color: red; -fx-border-color: black; -fx-alignment: center;");
-            } else {
-                // Case vide : fond blanc
-                label.setStyle("-fx-background-color: white; -fx-border-color: black; -fx-alignment: center;");
-            }
-        }
-    }
+    
 }
