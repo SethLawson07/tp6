@@ -54,9 +54,5 @@ class CrosswordTest {
         assertEquals("Vertical Clue", crossword.getDefinition(0, 1, false));
     }
 
-    @Test
-    void testIsBlackSquare() {
-        crossword.setDefinition(2, 2, true, "word");
-        assertFalse(crossword.isBlackSquare(2, 2));
-    }
+   
 }

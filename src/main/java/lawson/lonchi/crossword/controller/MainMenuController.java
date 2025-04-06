@@ -16,26 +16,27 @@ import lawson.lonchi.crossword.App;
 import lawson.lonchi.crossword.model.Crossword;
 import lawson.lonchi.crossword.model.Database;
 
+
 public class MainMenuController {
     private Stage primaryStage;
-    
+
     @FXML
     private FlowPane gridButtonsPane;
-    
+
     public void setPrimaryStage(Stage primaryStage) {
         this.primaryStage = primaryStage;
         loadGridButtons();
     }
-    
+
     private void loadGridButtons() {
         try {
             Database database = new Database("jdbc:mysql://localhost:3306/base_llawsonhetch", "root", "");
             ResultSet gridsResult = database.executeQuery("SELECT * FROM GRID");
-            
+
             while (gridsResult.next()) {
                 int gridNumber = gridsResult.getInt("numero_grille");
                 String gridName = gridsResult.getString("nom_grille");
-                
+
                 Button gridButton = new Button(gridName);
                 gridButton.setPrefWidth(200);
                 gridButton.setOnAction(event -> {
@@ -51,17 +52,18 @@ public class MainMenuController {
                         showError("Erreur lors du chargement de la grille.");
                     }
                 });
-                
+
                 gridButtonsPane.getChildren().add(gridButton);
             }
-            
+
             database.close();
         } catch (SQLException e) {
             e.printStackTrace();
             showError("Erreur lors du chargement des grilles disponibles.");
         }
     }
-    
+
+
     @FXML
     private void handleRandomGrid() {
         try {
@@ -88,7 +90,7 @@ public class MainMenuController {
             showError("Erreur lors du chargement des grilles disponibles.");
         }
     }
-    
+
     @FXML
     private void handleQuit() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Êtes-vous sûr de vouloir quitter ?", ButtonType.YES, ButtonType.NO);
@@ -98,22 +100,29 @@ public class MainMenuController {
             }
         });
     }
-    
+
+    /**
+     * Charge une grille de mots croisés à partir de son numéro.
+     *
+     * @param gridNumber le numéro de la grille à charger
+     * @return la grille de mots croisés correspondante
+     * @throws SQLException en cas d'erreur d'accès à la base de données
+     */
     public Crossword loadGrid(int gridNumber) throws SQLException {
         Database database = new Database("jdbc:mysql://localhost:3306/base_llawsonhetch", "root", "");
         ResultSet gridResult = database.executeQuery("SELECT * FROM GRID WHERE numero_grille = " + gridNumber);
-        
+
         if (gridResult.next()) {
             int width = gridResult.getInt("largeur");
             int height = gridResult.getInt("hauteur");
-            
+
             if (width <= 0 || height <= 0) {
                 throw new IllegalArgumentException("Taille de grille invalide : " + width + "x" + height);
             }
-            
+
             Crossword crossword = new Crossword(height, width);
             loadWords(database, crossword, gridNumber);
-            
+
             database.close();
             return crossword;
         } else {
@@ -121,33 +130,41 @@ public class MainMenuController {
             throw new IllegalArgumentException("Grille non trouvée : " + gridNumber);
         }
     }
-    
+
+    /**
+     * Charge les mots associés à une grille donnée dans l'objet Crossword.
+     *
+     * @param database    la connexion à la base de données
+     * @param crossword   la grille de mots croisés à remplir
+     * @param gridNumber  le numéro de la grille à charger
+     * @throws SQLException en cas d'erreur de requête
+     */
     public void loadWords(Database database, Crossword crossword, int gridNumber) throws SQLException {
         ResultSet wordsResult = database.executeQuery("SELECT * FROM CROSSWORD WHERE numero_grille = " + gridNumber);
-        
+
         while (wordsResult.next()) {
             String definition = wordsResult.getString("definition");
             boolean horizontal = wordsResult.getBoolean("horizontal");
             int row = wordsResult.getInt("ligne") - 1;
             int column = wordsResult.getInt("colonne") - 1;
             String solution = wordsResult.getString("solution");
-            
+
             if (row >= 0 && row < crossword.getHeight() && column >= 0 && column < crossword.getWidth()) {
                 crossword.setDefinition(row, column, horizontal, definition);
-                
+
                 for (int i = 0; i < solution.length(); i++) {
                     int currentRow = horizontal ? row : row + i;
                     int currentColumn = horizontal ? column + i : column;
-                    
+
                     if (currentRow < crossword.getHeight() && currentColumn < crossword.getWidth()) {
                         char currentSolution = solution.charAt(i);
                         char existingSolution = crossword.getSolution(currentRow, currentColumn);
-                        
+
                         if (existingSolution != ' ' && existingSolution != currentSolution) {
                             System.err.println("Conflit de solution : Ligne = " + currentRow + ", Colonne = " + currentColumn +
                             ", Solution existante = '" + existingSolution + "', Nouvelle solution = '" + currentSolution + "'");
                         }
-                        
+
                         crossword.setSolution(currentRow, currentColumn, currentSolution);
                         System.out.println("Chargement de la solution : Ligne = " + currentRow + ", Colonne = " + currentColumn + ", Solution = '" + currentSolution + "'");
                     }
@@ -157,7 +174,7 @@ public class MainMenuController {
             }
         }
     }
-    
+
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.showAndWait();
